@@ -1,4 +1,5 @@
-var REQUIRED_PARAMETERS = ['screenResolutionX', 'screenResolutionY'];
+var REQUIRED_PARAMETERS = ['screenResolutionX', 'screenResolutionY','page', 'centralLat', 'centralLng', 'minPrice',
+                                'maxPrice', 'updatedMin'];
 var missingParameters;
 
 function QueryParametersUtil(req) {
