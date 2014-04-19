@@ -26,4 +26,14 @@ QueryParametersUtil.prototype.getMissingParameters = function () {
     return missingParameters;
 };
 
+QueryParametersUtil.prototype.getMissingParametersJson = function () {
+
+    var missingParametersJson = new Object();
+    missingParametersJson.text = 'The following parameters are missing from the' +
+        ' request.';
+    missingParametersJson.missingParameters = missingParameters;
+
+    return missingParametersJson;
+};
+
 module.exports = QueryParametersUtil;
