@@ -1,1 +1,1 @@
-web: node web.js
+web: node then-home-grid-api.js

@@ -2,7 +2,7 @@
   "name": "then-home-grid-api",
   "version": "0.0.1",
   "description": "Grid Layout for ThenHome",
-  "main": "web.js",
+  "main": "then-home-grid-api.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

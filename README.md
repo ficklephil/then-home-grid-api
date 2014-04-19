@@ -38,6 +38,11 @@ heroku open
 To check out the logs use
 heroku logs
 
-Let’s ensure we have one dyno running the web process type:
+So process for new piece of code you want to test on production.
+
+Commit it, and push it to github.
+then  git push heroku master
+and that's it!
+
 
 References for this information : https://devcenter.heroku.com/articles/getting-started-with-nodejs#prerequisites
