@@ -1,0 +1,21 @@
+{
+  "name": "then-home-grid-api",
+  "version": "0.0.1",
+  "description": "Grid Layout for ThenHome",
+  "main": "web.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ficklephil/then-home-grid-api.git"
+  },
+  "author": "Philip Aberneithy",
+  "dependencies": {
+    "express": "^4.0.0",
+    "logfmt": "^1.1.2"
+  },
+  "engines": {
+    "node": "0.10.26"
+  }
+}
