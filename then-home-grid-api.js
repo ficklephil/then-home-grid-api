@@ -2,8 +2,11 @@ var express = require("express");
 var logfmt = require("logfmt");
 var request = require("request");
 var QueryParametersUtil = require("./src/QueryParametersUtil.js");
+var DivToPixelUtil = require("./src/DivToPixelUtil.js");
 var Q = require("q");
 var app = express();
+
+var divToPixelUtil = new DivToPixelUtil();
 
 app.use(logfmt.requestLogger());
 
@@ -16,12 +19,45 @@ app.get('/', function (req, res) {
         res.send(queryParametersUtil.getMissingParametersJson());
     } else {
         nestoriaSearch(req, function (body) {
-            addThenHomeParametersToNestoria(body, req, function(body){
-                res.send(body);
-            });
+            if (isNestoria(body)) {
+                addThenHomeParametersToNestoria(body, req, function (body) {
+                    res.send(body);
+                });
+            } else {
+                res.send(sendErrorMessage(body));
+            }
         });
     }
 });
+
+function nestoriaSearch(req, callback) {
+
+    var nestoriaSearchUrl = constructNestoriaSearchUrl(req.query);
+    nestoriaRequest(nestoriaSearchUrl, callback);
+}
+
+function sendErrorMessage(body) {
+
+    if (body.hasOwnProperty("error")) {
+        return body;
+    } else {
+        return nestoriaCannotFindText();
+    }
+}
+
+function isNestoria(body) {
+
+    return body.hasOwnProperty("response");
+}
+
+function nestoriaRequestError(error) {
+    return {text: 'The following Nestoria Request error occurred', errorLocation: 'Node', error: error};
+}
+
+function nestoriaCannotFindText() {
+
+    return {text: 'Nestoria is not returning a JSON feed. Please check URL to Nestoria.', errorLocation: 'Node'}
+}
 
 function addThenHomeParametersToNestoria(body, req, callback) {
 
@@ -30,10 +66,6 @@ function addThenHomeParametersToNestoria(body, req, callback) {
 
     var itemLat;
     var itemLng;
-    var latLo = queryParameters.latLo;
-    var lngLo = queryParameters.lngLo;
-    var latHi = queryParameters.latHi;
-    var lngHi = queryParameters.lngHi;
 
     var screenResolutionX = queryParameters.screenResolutionX;
     var screenResolutionY = queryParameters.screenResolutionY;
@@ -41,7 +73,7 @@ function addThenHomeParametersToNestoria(body, req, callback) {
     nestoriaRequestBody.screenResolutionX = screenResolutionX;
     nestoriaRequestBody.screenResolutionY = screenResolutionY;
 
-    nestoriaRequestBody.additionalPlaceName = 'bean land';
+    nestoriaRequestBody.additionalPlaceName = '';
 
     var listings = body.response.listings;
 
@@ -51,62 +83,16 @@ function addThenHomeParametersToNestoria(body, req, callback) {
             itemLat = listings[i].latitude;
             itemLng = listings[i].longitude;
 
-            convertCoordToDivPixel(screenResolutionX, screenResolutionY, itemLat, itemLng, latLo, lngLo, latHi, lngHi);
+            divToPixelUtil.convertCoordToDivPixel(screenResolutionX, screenResolutionY, itemLat, itemLng,
+                queryParameters.latLo, queryParameters.lngLo, queryParameters.latHi, queryParameters.lngHi);
 
             //Longitude is X, Latitude is Y
-            listings[i].longitudeXCoor = Math.round(getDivPixelLng());
-            listings[i].latitudeYCoor = Math.round(getDivPixelLat());
+            listings[i].longitudeXCoor = Math.round(divToPixelUtil.getDivPixelLng());
+            listings[i].latitudeYCoor = Math.round(divToPixelUtil.getDivPixelLat());
         }
     }
 
-//    var jsonBody = JSON.stringify(body);
     callback(body);
-}
-
-//remove to new class
-var _divPixelLat;
-var _divPixelLng;
-
-function convertCoordToDivPixel(screenResolutionX,screenResolutionY,item_lat,item_lng,lat_lo,lng_lo,lat_hi,lng_hi)
-{
-    var latitudePixelsFromTop = screenResolutionY - calcLatOrLngInPixels(screenResolutionY,lat_hi,lat_lo,item_lat);
-    var longitudePixels = calcLatOrLngInPixels(screenResolutionX,lng_hi,lng_lo,item_lng);
-
-    _divPixelLat = latitudePixelsFromTop;
-    _divPixelLng = longitudePixels;
-}
-
-/**
- * Calculates the Latitude or Longitude in Pixels
- * depending on the screen resolution, and high and low values in this case
- * the high and low values being the latitude/longitude high and latitude/longitude low
- *
- * @inputs screenResolution a screen resolution either x or y ie. 1024
- * high value ie. latitude high ie. lat_hi from the NE bound
- * low value ie. latitude low ie. lat_lo from the SW bound
- * item value ie. latitude of the item
- * @return Number ie. pixels
- */
-function calcLatOrLngInPixels(screenResolution,highValue,lowValue,itemValue){
-    var ratioLatitudeToPixel = screenResolution / (highValue - lowValue);
-    var itemsLatitudeRelativeToBottom = itemValue - lowValue;
-    return itemsLatitudeRelativeToBottom * ratioLatitudeToPixel;
-}
-
-function getDivPixelLat()
-{
-    return _divPixelLat;
-}
-
-function getDivPixelLng()
-{
-    return _divPixelLng;
-}
-
-function nestoriaSearch(req, callback) {
-
-    var nestoriaSearchUrl = constructNestoriaSearchUrl(req.query);
-    nestoriaRequest(nestoriaSearchUrl, callback);
 }
 
 function constructNestoriaSearchUrl(queryParamaters) {
@@ -133,7 +119,7 @@ function nestoriaRequest(url, callback) {
     var options = {
         url: url,
         timeout: 2000,
-        json:true
+        json: true
     };
 
     request(options, function (error, response, body) {
@@ -141,13 +127,15 @@ function nestoriaRequest(url, callback) {
         if (!error && response.statusCode == 200) {
             deferred.resolve(callback(body));
         } else {
-//            deferred.resolve(createArticleErrorDescrition(articleUrl, error));
+            deferred.resolve(callback(nestoriaRequestError(error)));
         }
     });
     return deferred.promise;
 }
 
 var port = Number(process.env.PORT || 5000);
+
 app.listen(port, function () {
+
     console.log('listening on ' + port);
 });
