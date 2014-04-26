@@ -21,7 +21,7 @@ app.get('/', function (req, res) {
         nestoriaSearch(req, function (body) {
             if (isNestoria(body)) {
                 addThenHomeParametersToNestoria(body, req, function (body) {
-                    res.send(body);
+                    res.send('jsonCallback(' +body+');');//DON't NEED REMOVE WHEN FRONT END IS GOOD should just be body here.
                 });
             } else {
                 res.send(sendErrorMessage(body));
@@ -92,7 +92,8 @@ function addThenHomeParametersToNestoria(body, req, callback) {
         }
     }
 
-    callback(body);
+    var json = JSON.stringify(body);//DON't NEED REMOVE WHEN FRONT END IS GOOD
+    callback(json);
 }
 
 function constructNestoriaSearchUrl(queryParamaters) {
